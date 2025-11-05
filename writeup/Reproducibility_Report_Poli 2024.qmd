@@ -52,7 +52,7 @@ The code to generate the sequences for the visual learning task is publicly avai
 
 ## Methods
 
-### **Reproduction:** 
+### **Reproduction:**
 
 #### Data Preparation
 
@@ -104,7 +104,7 @@ Verify the following columns are present:
 
         *Authors compared models using WAIC and LOO. Full model (includes individual differences) should have lower scores, indicating a* *better fit. Here's the code chunk where they did this:*
 
-        ``` Python
+        ``` python
         model_waic1 = az.loo(idata, var_name="LT_like")
         model_waic2 = az.waic(idata, var_name="LT_like")
         ```
@@ -117,7 +117,7 @@ Verify the following columns are present:
 
         *The authors computed the median of each infant's distribution t[o get a single value per infant per parameter:]{.underline}*
 
-    ``` Python
+    ``` python
     posterior=pd.DataFrame()
     posterior["subjnum"]= markasgood.values.reshape(-1, )
     posterior["LT0"]=np.median(trace["LT0"], axis=0)  # Processing speed (looking time)
