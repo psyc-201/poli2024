@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jan 22 11:45:35 2021
-Adapted on Wed Oct 29 2025 by @thenness-y
 
 @author: maxhin, frapol, tomghi
 """
@@ -346,6 +345,7 @@ with model:
         hdi_prob=0.89,
     )
     summary.to_csv("gen_summary.csv")
+
 
 # put parameter values for each subject in dataframe...
 posterior = pd.DataFrame()

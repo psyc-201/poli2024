@@ -236,6 +236,7 @@ print("   Model completed successfully without WAIC/LOO")
 
 ############################### PLOTTING #####################################
 # plot the parameters and save the plots
+
 az.plot_forest(trace, kind="forestplot", var_names=["mu_LT1"], hdi_prob=0.89)
 plt.savefig("forest_mu_LT1.png")
 plt.show()
