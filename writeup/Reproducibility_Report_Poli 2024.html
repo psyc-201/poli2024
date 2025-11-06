@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Victoria Hennessy (vhennessy@ucsd.edu)">
-<meta name="dcterms.date" content="2025-10-27">
+<meta name="dcterms.date" content="2025-11-05">
 
 <title>Reproducibility Report for Poli et al.&nbsp;(2024, Developmental Science)</title>
 <style>
@@ -136,7 +136,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 27, 2025</p>
+      <p class="date">November 5, 2025</p>
     </div>
   </div>
   
@@ -152,7 +152,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
 <p><em>[No abstract is needed.] Each reproducibility project will have a straightforward, no frills report of the study and reproducibility results. These reports will be publicly available as supplementary material for the aggregate report(s) of the project as a whole. Also, to maximize project integrity, the intro and methods will be written and critiqued in advance of your attempt to reproduce the results. Introductions can be just 1-2 paragraphs clarifying the main idea of the original study, the target finding for your reproducibility attempt, and any other essential information. It will NOT have a literature review – that is in the original publication. You can write both the introduction and the methods in past tense.</em></p>
-<p><strong>Clarify key analysis of interest here: Hierarchical Bayesian Modeling</strong></p>
+<p><strong>Clarify key analysis of interest here: Hierarchical Bayesian model to reproduce individual estimates of infant curiosity from their looking behavior</strong></p>
 <section id="justification-for-choice-of-study" class="level3">
 <h3 class="anchored" data-anchor-id="justification-for-choice-of-study">Justification for choice of study</h3>
 <p>My current line of research focuses on individual differences in early information seeking. To study infant learning strategies, Poli and colleagues (2020; 2024) have developed an analytic pipeline that leverages an infant-friendly visual learning (VL) task from which information-theoretic measures (e.g., <strong>predictability and information gain</strong>) can be derived for each trial in sequences of visual events.</p>
@@ -193,10 +193,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ul>
 <li>Combine the two datasets, <code>Roris_nostd.csv</code> and <code>Roris_smiley.csv</code>.</li>
 </ul></li>
-<li>Convert to model-friendly format.
-<ul>
-<li>Create indices and convert to Theano.</li>
-</ul></li>
+<li>Convert to model-friendly format.</li>
 <li>Z-score the dependent variables (looking time and saccadic latency)</li>
 <li>Z-score the independent variables (information gain, predictability, and surprise)</li>
 <li>Handle missing values.</li>
@@ -220,27 +217,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><p><label><input type="checkbox"><strong>Fit the hierarchical Bayesian model (HBM)</strong></label></p>
 <ul>
 <li>Specify relationships of interest (i.e., between looking behavior and latent parameters).</li>
-<li>Fit the model using MCMC sampling:
+<li>Fit the model using ADVI sampling for testing, MCMC for final reproduction.</li>
+<li>Derive individual posterior distributions for:
 <ul>
-<li>Sampling details:
-<ul>
-<li>500k iterations x 2 chains, toss first 490k</li>
-<li>10k kept, 20k total samples per parameter per infant</li>
-</ul></li>
-<li>Initialization = ADVI + mass matrix adaptation</li>
-</ul></li>
-<li>Estimate:
-<ul>
-<li><strong>Processing Speed</strong>: β₀^SL (intercept for saccadic latency)</li>
 <li><strong>Learning Performance</strong>: β₁^SL (correlation between saccadic latency and predictability)</li>
 <li><strong>Curiosity</strong>: β₁^LT (correlation between looking time and information gain)</li>
-<li><strong>Sustained Attention</strong>: λ (from survival function for look-away, controlling for surprise, information gain, and time)</li>
 </ul></li>
 </ul></li>
 <li><p><label><input type="checkbox"><strong>Model validation</strong></label></p>
 <ul>
 <li><p>Check convergence.</p>
-<p>R^ threshold should be &lt; 1.004.</p></li>
+<p>R^ threshold should be &lt; 1.004 if using MCMC.</p></li>
 <li><p>Compare model fit between hierarchical vs.&nbsp;simple (group-only) model</p>
 <p><em>Necessary to confirm the model is working correctly. If we don’t find that infants look longer at more informative stimuli on average (group infant), model fitting may be wrong. Group-level results should match original findings before proceeding. Must verify that the hierarchical model fits better to prove that individual differences exist.</em></p>
 <p><em>Authors compared models using WAIC and LOO. Full model (includes individual differences) should have lower scores, indicating a</em> <em>better fit. Here’s the code chunk where they did this:</em></p>
@@ -249,9 +236,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul></li>
 <li><p><label><input type="checkbox"><strong>Extract individual differences</strong></label></p>
 <ul>
-<li><p>Once model has ran, compute median of posterior distributions for each parameter.</p>
-<p><em>The HBM produces a probability distribution for each parameter for each infant (e.g., infant X’s “learning performance” isn’t a single number, but a distribution of plausible values within a CI with 89% confidence). The model represents this as 20,000 samples from the distribution.</em></p>
-<p><em>The authors computed the median of each infant’s distribution t<u>o get a single value per infant per parameter:</u></em></p></li>
+<li><p>Once model has ran, compute posterior distributions for each parameter.</p>
+<p><em>The HBM produces a probability distribution for each parameter for each infant (e.g., infant X’s “learning performance” isn’t a single number, but a distribution of plausible values within a CI with 89% confidence). The model represents this as 20,000 samples from the distribution.</em></p></li>
 </ul>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>posterior<span class="op">=</span>pd.DataFrame()</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>posterior[<span class="st">"subjnum"</span>]<span class="op">=</span> markasgood.values.reshape(<span class="op">-</span><span class="dv">1</span>, )</span>
@@ -264,8 +250,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>posterior.to_csv(<span class="st">'posterior_median.csv'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li><p>Save to an output file in which there is one row per infant; columns = latent parameters.</p></li>
-<li><p>Identify infants with significant individual effects (89% credible intervals excludes zero)</p>
-<p><em>In the original paper, the authors identified 57 infants (40%) with a significant coefficient for learning performance; 31 infants (22%) showed significant curiosity effects.</em></p></li>
+<li><p>Identify infants with significant individual effects (89% credible intervals excludes zero)</p></li>
 </ul></li>
 </ol>
 </section>
@@ -292,11 +277,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="project-progress-check-1">Project Progress Check 1</h2>
 <section id="measure-of-success" class="level3">
 <h3 class="anchored" data-anchor-id="measure-of-success">Measure of success</h3>
-<p>Please describe the outcome measure for the success or failure of your reproduction and how this outcome will be computed.</p>
+<p>The outcome measure will be a successful reproduction of their findings based on the latent parameters from the Bayesian model. I aim to reproduce the following as indexed by 89% credible intervals different from zero (where zero indicates lack of an effect) with both the original and the simulated data:</p>
+<ul>
+<li><p><strong>Learning Performance (saccadic latency x predictability)</strong>: approximately 57 infants (40%) with a significant coefficient.</p></li>
+<li><p><strong>Curiosity (looking time x information gain)</strong>: approximately 31 infants (22%) with a significant coefficient</p></li>
+</ul>
 </section>
 <section id="pipeline-progress" class="level3">
 <h3 class="anchored" data-anchor-id="pipeline-progress">Pipeline progress</h3>
-<p>Earlier in this report, you described the steps necessary to reproduce the key result(s) of this study. Please describe your progress on each of these steps (e.g., data preprocessing, model fitting, model evaluation).</p>
+<ol type="1">
+<li>Modernized the original modeling script:
+<ul>
+<li>Updated pymc3 to pymc, theano to pytensor</li>
+<li>Removed masked arrays since PyMC handles missing values automatically</li>
+</ul></li>
+<li>Changed sampling for testing purposes:
+<ol type="1">
+<li><p>Switched to ADVI</p>
+<ul>
+<li>Original paper and findings use MCMC with 500K tuning + 10K sampling (I have not have the time or computational capacity to run this yet).</li>
+</ul></li>
+<li><p>Added convergence tracking, basically records the mean and SD of ADVI’s approximation at every iteration and allows it to improve its Gaussian approximation to the posterior; the tracking lets me see if it’s converging.</p></li>
+<li><p>Commented out WAIC/LOO, for now. Trying to run these w/ ADVI’s approximation + severe PyTensor C++ issues caused big issues that were beyond my understanding…</p></li>
+<li><p>In the meantime, I just checked my ADVI convergence. The lines flattened out by iteration 10k, indicating that the model successfully reached an “optimal” approximation of the posteriors:</p>
+<p><img src="images/advi_convergence-01.png" class="img-fluid"></p></li>
+</ol></li>
+<li>Fit the model w/ ADVI sampling:</li>
+</ol>
+<ul>
+<li>I did this several times with data from just 3 subjects for testing purposes, and then with all subjects in the combined dataset.</li>
+</ul>
+<ol start="4" type="1">
+<li><p>Ran a basic analysis script (advi_analysis.py) to evaluate the significance of individual subject coefficients from the model based on 89% credible intervals w/out zero.</p>
+<p>Preliminary Results w/ ADVI Sampling:</p>
+<p><strong>Learning Performance (saccadic latency x predictability)</strong>: approximately 63 infants (43.45%) with a significant coefficient (SL1).</p>
+<p><strong>Curiosity (looking time x information gain)</strong>: approximately 40 infants (27.59%) with a significant coefficient (LT1).</p></li>
+</ol>
 </section>
 </section>
 <section id="results" class="level2">

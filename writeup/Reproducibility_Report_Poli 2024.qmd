@@ -14,7 +14,7 @@ format:
 
 *\[No abstract is needed.\] Each reproducibility project will have a straightforward, no frills report of the study and reproducibility results. These reports will be publicly available as supplementary material for the aggregate report(s) of the project as a whole. Also, to maximize project integrity, the intro and methods will be written and critiqued in advance of your attempt to reproduce the results. Introductions can be just 1-2 paragraphs clarifying the main idea of the original study, the target finding for your reproducibility attempt, and any other essential information. It will NOT have a literature review -- that is in the original publication. You can write both the introduction and the methods in past tense.*
 
-**Clarify key analysis of interest here: Hierarchical Bayesian Modeling**
+**Clarify key analysis of interest here: Hierarchical Bayesian model to reproduce individual estimates of infant curiosity from their looking behavior**
 
 ### Justification for choice of study
 
@@ -59,7 +59,6 @@ The code to generate the sequences for the visual learning task is publicly avai
 1.  Load the raw data for the visual learning task.
     -   Combine the two datasets, `Roris_nostd.csv` and `Roris_smiley.csv`.
 2.  Convert to model-friendly format.
-    -   Create indices and convert to Theano.
 3.  Z-score the dependent variables (looking time and saccadic latency)
 4.  Z-score the independent variables (information gain, predictability, and surprise)
 5.  Handle missing values.
@@ -78,27 +77,21 @@ Verify the following columns are present:
 
 #### Analysis Pipeline
 
-1.  [ ] **Fit the hierarchical Bayesian model (HBM)**
+1.  [x] **Fit the hierarchical Bayesian model (HBM)**
 
     -   Specify relationships of interest (i.e., between looking behavior and latent parameters).
-    -   Fit the model using MCMC sampling:
-        -   Sampling details:
-            -   500k iterations x 2 chains, toss first 490k
-            -   10k kept, 20k total samples per parameter per infant
-        -   Initialization = ADVI + mass matrix adaptation
-    -   Estimate:
-        -   **Processing Speed**: β₀\^SL (intercept for saccadic latency)
+    -   Fit the model using ADVI sampling for testing, MCMC for final reproduction.
+    -   Derive individual posterior distributions for:
         -   **Learning Performance**: β₁\^SL (correlation between saccadic latency and predictability)
         -   **Curiosity**: β₁\^LT (correlation between looking time and information gain)
-        -   **Sustained Attention**: λ (from survival function for look-away, controlling for surprise, information gain, and time)
 
 2.  [ ] **Model validation**
 
     -   Check convergence.
 
-        R\^ threshold should be \< 1.004.
+        R\^ threshold should be \< 1.004 if using MCMC. Qualitative check with ADVI.
 
-    -   Compare model fit between hierarchical vs. simple (group-only) model
+    -   (If MCMC) Compare model fit between hierarchical vs. simple (group-only) model
 
         *Necessary to confirm the model is working correctly. If we don't find that infants look longer at more informative stimuli on average (group infant), model fitting may be wrong. Group-level results should match original findings before proceeding. Must verify that the hierarchical model fits better to prove that individual differences exist.*
 
@@ -109,13 +102,11 @@ Verify the following columns are present:
         model_waic2 = az.waic(idata, var_name="LT_like")
         ```
 
-3.  [ ] **Extract individual differences**
+3.  [x] **Extract individual differences**
 
-    -   Once model has ran, compute median of posterior distributions for each parameter.
+    -   Once model has ran, compute posterior distributions for each parameter.
 
         *The HBM produces a probability distribution for each parameter for each infant (e.g., infant X's "learning performance" isn't a single number, but a distribution of plausible values within a CI with 89% confidence). The model represents this as 20,000 samples from the distribution.*
-
-        *The authors computed the median of each infant's distribution t[o get a single value per infant per parameter:]{.underline}*
 
     ``` python
     posterior=pd.DataFrame()
@@ -132,8 +123,6 @@ Verify the following columns are present:
     -   Save to an output file in which there is one row per infant; columns = latent parameters.
 
     -   Identify infants with significant individual effects (89% credible intervals excludes zero)
-
-        *In the original paper, the authors identified 57 infants (40%) with a significant coefficient for learning performance; 31 infants (22%) showed significant curiosity effects.*
 
 ### Simulation:
 
@@ -161,11 +150,42 @@ The computing environments are the same. Visualizations may be carried out in R,
 
 ### Measure of success
 
-Please describe the outcome measure for the success or failure of your reproduction and how this outcome will be computed.
+The outcome measure will be a successful reproduction of their findings based on the latent parameters from the Bayesian model. I aim to reproduce the following as indexed by 89% credible intervals different from zero (where zero indicates lack of an effect) with both the original and the simulated data:
+
+-   **Learning Performance (saccadic latency x predictability)**: approximately 57 infants (40%) with a significant coefficient.
+
+-   **Curiosity (looking time x information gain)**: approximately 31 infants (22%) with a significant coefficient
 
 ### Pipeline progress
 
-Earlier in this report, you described the steps necessary to reproduce the key result(s) of this study. Please describe your progress on each of these steps (e.g., data preprocessing, model fitting, model evaluation).
+1.  Modernized the original modeling script:
+    -   Updated pymc3 to pymc, theano to pytensor
+    -   Removed masked arrays since PyMC handles missing values automatically
+2.  Changed sampling for testing purposes:
+    1.  Switched to ADVI
+
+        -   Original paper and findings use MCMC with 500K tuning + 10K sampling (I have not have the time or computational capacity to run this yet).
+
+    2.  Added convergence tracking, basically records the mean and SD of ADVI's approximation at every iteration and allows it to improve its Gaussian approximation to the posterior; the tracking lets me see if it's converging.
+
+    3.  Commented out WAIC/LOO, for now. Trying to run these w/ ADVI's approximation + severe PyTensor C++ issues caused big issues that were beyond my understanding...
+
+    4.  In the meantime, I just checked my ADVI convergence. The lines flattened out by iteration 10k, indicating that the model successfully reached an "optimal" approximation of the posteriors:
+
+        ![](images/advi_convergence-01.png)
+3.  Fit the model w/ ADVI sampling:
+
+-   I did this several times with data from just 3 subjects for testing purposes, and then with all subjects in the combined dataset.
+
+4.  Ran a basic analysis script (advi_analysis.py) to evaluate the significance of individual subject coefficients from the model based on 89% credible intervals w/out zero.
+
+    Preliminary Results w/ ADVI Sampling:
+
+    **Learning Performance (saccadic latency x predictability)**: approximately 63 infants (43.45%) with a significant coefficient (SL1).
+
+    **Curiosity (looking time x information gain)**: approximately 40 infants (27.59%) with a significant coefficient (LT1).
+
+In summary, I completed the steps in the Reproduction section of my Methods, *kind of*. There are still major issues related to the model sampling strategy that I need to resolve.
 
 ## Results
 
