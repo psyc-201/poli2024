@@ -6,67 +6,71 @@ Adapted for PyMC v5 on October 29, 2025 by @thenness-y
 @author: maxhin, frapol, tomghi
 """
 import numpy as np
-import pymc as pm  # Changed from pymc3
-import pytensor.tensor as pt  # Changed from theano.tensor as T
+import pymc as pm  # changed from pymc3, newer version
+import pytensor.tensor as pt  # changed from theano.tensor as T, newer backend
 import arviz as az
-import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend to avoid plt.show() blocking
 import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.stats import zscore
+import matplotlib
+matplotlib.use('Agg')  # prevents plot windows from blocking execution
 
 # Choose sampling method (ADVI vs MCMC)
-useADVI = True  # Set to True to use ADVI, False for MCMC NUTS sampling
+useADVI = True  # set to True to use ADVI (variational inference), False for MCMC NUTS sampling
 
 # Import data first study
 data = pd.read_csv("Roris_nostd.csv", sep=",")
 # Import smiley data
 data_s = pd.read_csv("Roris_smiley.csv", sep=",")
 # Change subject number to avoid overlap
-data_s["subj"] = data_s["subj"] + 73
+data_s["subj"] = data_s["subj"] + 73 # adds 73 to each subject number in smiley data
 
 # Concatenate the two dataframes
 data.columns = data_s.columns
 data = pd.concat([data_s, data], ignore_index=True)
 
-# FOR MINIMAL TEST: Use only first 3 subjects, comment out for full analysis
+# FOR MINIMAL TEST ONLY: Use only first 3 subjects, comment out for full analysis
 # data = data[data.subj.isin([1, 2, 3])]
 
 ############### Convert data to a pymc-friendly version ######################
 # total number of subjects
 nsubj = len(data.subj.unique())
 # max number of sequences in the task
-nseq = len(data.nseq.unique())
+nseq = len(data.nseq.unique()) # count sequences
 # max number of trials in a sequence
-ntrial = len(data.ntrialseq.unique())
+ntrial = len(data.ntrialseq.unique()) # count trials
+
 # index of each subject and each sequence for each trial
+# necessary for hierarchical modeling
 subj_idx = data.subj.values.astype(int) - 1
 seq_idx = seq_vect = data.nseq.values.astype(int) - 1  # subjective sequence number
 trial_vect = data.ntrialseq.values - 1
 
-# Convert to PyTensor shared variables (replaces theano.shared)
+# convert to PyTensor shared variables (replaces theano.shared)
+# I think this is where things might get funky...
 trial_vect = pt.as_tensor_variable(trial_vect.astype("float64"))
 seq_vect = pt.as_tensor_variable(seq_vect.astype("float64"))
 
 ################ Dependent Variables ##########################################
+# This could also be where things might be breaking...
 # Convert to regular arrays for PyMC v5 compatibility
-ltime = zscore(data.dwell.values, nan_policy="omit")
-slat = zscore(data.slat.values, nan_policy="omit") 
-lookaway = data.event.values  # look-away from the screen (0 for no look-away, 1 for look-away)
-ntrialseq = zscore(data.ntrialseq.values, nan_policy="omit")
+ltime = zscore(data.dwell.values, nan_policy="omit") # Looking time
+slat = zscore(data.slat.values, nan_policy="omit") # Saccadic latency
+lookaway = data.event.values  # Look-away from the screen (0 for no look-away, 1 for look-away)
+ntrialseq = zscore(data.ntrialseq.values, nan_policy="omit") # Trial number within sequence
 
 # Convert to PyTensor tensors
 ntrialseq = pt.as_tensor_variable(ntrialseq.astype("float64"))
 
 
 ################ Independent Variables ########################################
-kl = zscore(data.D.values)
+kl = zscore(data.D.values) # Information gain (KL-Divergence)
 kl = pt.as_tensor_variable(kl.astype("float64"))
 
-ent = zscore(data.H.values)
+ent = zscore(data.H.values) # Predicability (Entropy)
 ent = pt.as_tensor_variable(ent.astype("float64"))
 
-surp = zscore(data.I.values)
+surp = zscore(data.I.values) # Surprise
 surp = pt.as_tensor_variable(surp.astype("float64"))
 
 
@@ -79,8 +83,6 @@ markasgood = pd.read_csv("markasgood.csv", sep=",", header=None)
 markasgood_s = pd.read_csv("markasgood_smiley.csv", sep=",", header=None)
 # concatenate them
 markasgood = pd.concat([markasgood_s, markasgood], ignore_index=True)
-
-# Note: markasgood filtering not needed since we use data.subj.unique() later
 
 ################ Bayesian Model ###############################################
 
@@ -111,10 +113,10 @@ with pm.Model() as model:
         "LT0", mu=mu_LT0, sigma=sigma_LT0, shape=nsubj
     )  # processing speed, how long it takes to encode
     LT1 = pm.Normal("LT1", mu=mu_LT1, sigma=sigma_LT1, shape=nsubj)  # curiosity
-    LT2 = pm.Normal("LT2", mu=0, sigma=1)  # effect of time
-    LT3 = pm.Normal("LT3", mu=0, sigma=1)  # surprise
-    LT4 = pm.Normal("LT4", mu=0, sigma=1)  # entropy
-    eps_LT = pm.HalfCauchy("eps_LT", beta=1)
+    LT2 = pm.Normal("LT2", mu=0, sigma=1)  # effect of time (group-level)
+    LT3 = pm.Normal("LT3", mu=0, sigma=1)  # surprise (group-level)
+    LT4 = pm.Normal("LT4", mu=0, sigma=1)  # entropy (group-level)
+    eps_LT = pm.HalfCauchy("eps_LT", beta=1) # error/noise
 
     # Define beta0, beta1 and error for Saccadic Latency
     SL0 = pm.Normal(
@@ -147,8 +149,8 @@ with pm.Model() as model:
     # =============================================================================
     ########################### Hyper-Priors ######################################
     # Define kappa and theta
-    kappa = pm.Gamma("kappa", alpha=1, beta=1)  # Updated Gamma parameterization
-    theta = pm.Gamma("theta", alpha=1, beta=1)  # Updated Gamma parameterization
+    kappa = pm.Gamma("kappa", alpha=1, beta=1)
+    theta = pm.Gamma("theta", alpha=1, beta=1)
 
     # Define mu and sigma for ß1 Look Away
     mu_LA = pm.Normal("mu_LA", mu=0, sigma=1)
@@ -157,17 +159,21 @@ with pm.Model() as model:
     ################################# Priors ######################################
     # Define baseline hazard and beta1 for Look-Away
     lambda0 = pm.Gamma(
-        "lambda0", alpha=kappa, beta=theta, shape=nsubj
+        "lambda0", alpha=kappa, beta=theta, shape=nsubj 
     )  # baseline attention -sticky fixation- not a good thing,
+       # So baseline hazard, how quickly infant naturally looks away?
     beta_LA = pm.Normal(
         "beta_LA", mu_LA, sigma=sigma_LA, shape=nsubj
     )  # also related to curiosity, how much you disengage related to information gain
+       # i.e. how much does information gain (KL) in a given seq make you look away faster?
     LA2 = pm.Normal("LA2", mu=0, sigma=1)  # effect of time
     LA3 = pm.Normal("LA3", mu=0, sigma=1)  # surprise
 
     ######################### Estimates and Likelihood ############################
-    # proportional hazard model (https://docs.pymc.io/notebooks/survival_analysis.html)
+    # proportional hazard model (https://docs.pymc.io/notebooks/survival_analysis.html) (TH: this is a broken link)
     # The piecewise-constant proportional hazard model is closely related to a Poisson regression model, hence:
+    # LA_like = pm.Poisson("LA_like", T.exp(beta_LA[subj_idx] * kl + LA2* ntrialseq + LA3*surp)*lambda0[subj_idx], observed=lookaway)
+
     LA_like = pm.Poisson(
         "LA_like",
         pt.exp(beta_LA[subj_idx] * kl + LA2 * ntrialseq + LA3 * surp)
@@ -180,8 +186,8 @@ with pm.Model() as model:
 with model:
     # Using Variational Inference
     if useADVI:
-        advi = pm.ADVI()
-        tracker = pm.callbacks.Tracker(
+        advi = pm.ADVI()  # renamed this from inference to advi to avoid confusion
+        tracker = pm.callbacks.Tracker(  # added a tracker for better diagnostics and plotting
             mean=advi.approx.mean.eval,
             std=advi.approx.std.eval,
         )
@@ -191,27 +197,45 @@ with model:
     else:
         # More reasonable default settings for faster testing
         trace = pm.sample(
-            1000, chains=2, cores=2, tune=500, 
-            init="adapt_diag", target_accept=0.8
+            10000, chains=2, cores=64, tune=490000,
+            init="advi+adapt_diag"
         )
 
-# check ELBO for ADVI
+# creates ELBO style plot showing how the mean and std evolve during ADVI fitting
 if useADVI:
     plt.figure(figsize=(10, 6))
     plt.plot(tracker["mean"], label="ADVI mean", alpha=0.7)
     plt.plot(tracker["std"], label="ADVI std", alpha=0.7)
     plt.legend()
-    plt.ylabel("ADVI tracker")
-    plt.xlabel("iteration")
+    plt.ylabel("ELBO")
+    plt.xlabel("Iteration")
     plt.title("ADVI Convergence")
     plt.savefig("advi_convergence.png", dpi=150, bbox_inches='tight')
     plt.close()  # Close instead of show to avoid blocking
-    print("ADVI convergence plot saved to advi_convergence.png")
 
 # Model goodness of fit
-# Note: WAIC/LOO commented out - not compatible with ADVI or current PyTensor set up in the mini model
-print("⚠️  WAIC/LOO calculations skipped")
-print("   Model completed successfully without WAIC/LOO")
+# WAIC/LOO commented out - not compatible with ADVI or current PyTensor set up in the mini model, need to fix
+print("WAIC/LOO calculations skipped")
+print("Model completed successfully without WAIC/LOO")
+
+# # change trace format for further analysis
+# idata = az.from_pymc3(trace)
+
+# # Nan values are treated as zero likelihood by pymc, so masked (nan) values must be removed before computing model goodness of fit
+# SL_like_nan = np.nan_to_num(
+#     idata.log_likelihood.SL_like, copy=True, nan=0
+# )  # mean_value)
+# idata.log_likelihood["SL_like"] = (idata.log_likelihood["SL_like"].dims, SL_like_nan)
+
+# LT_like_nan = np.nan_to_num(
+#     idata.log_likelihood.LT_like, copy=True, nan=0
+# )  # mean_value)
+# idata.log_likelihood["LT_like"] = (idata.log_likelihood["LT_like"].dims, LT_like_nan)
+
+# LA_like_nan = np.nan_to_num(
+#     idata.log_likelihood.LA_like, copy=True, nan=0
+# )  # mean_value)
+# idata.log_likelihood["LA_like"] = (idata.log_likelihood["LA_like"].dims, LA_like_nan)
 
 # # Get WAIC estimates
 # waic_results = {}
@@ -384,7 +408,7 @@ summary = az.summary(
     round_to=3,
     hdi_prob=0.89,
 )
-summary.to_csv("gen_summary_rep.csv")
+summary.to_csv("gen_summary_reprodcution.csv")
 
 # Extract posterior median values for each subject
 # Put parameter values for each subject in dataframe
@@ -397,6 +421,4 @@ posterior["SL1"] = np.median(trace.posterior["SL1"].values, axis=(0, 1))
 posterior["lambda0"] = np.median(trace.posterior["lambda0"].values, axis=(0, 1))
 posterior["beta_LA"] = np.median(trace.posterior["beta_LA"].values, axis=(0, 1))
 # ...and save them
-posterior.to_csv("posterior_median_rep.csv")
-
-print("Results saved to gen_summary_rep.csv and posterior_median_rep.csv")
+posterior.to_csv("posterior_median_reproduction.csv")
