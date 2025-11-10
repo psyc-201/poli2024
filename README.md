@@ -4,6 +4,7 @@
 
 Required dependencies: 
 
+python                    3.10.19
 pymc                      5.25.1
 numpy                     2.2.6
 pytensor                  2.31.7
