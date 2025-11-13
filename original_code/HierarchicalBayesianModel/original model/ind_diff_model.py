@@ -103,6 +103,7 @@ with pm.Model() as model:
     sigma_SL1 = 1
 
     ################################# Priors ######################################
+    # Creates individual parameters for each infant
     # Define beta0, beta1 and error for Looking Time
     LT0 = pm.Normal(
         "LT0", mu=mu_LT0, sigma=sigma_LT0, shape=nsubj

@@ -62,7 +62,6 @@ ntrialseq = zscore(data.ntrialseq.values, nan_policy="omit") # Trial number with
 # Convert to PyTensor tensors
 ntrialseq = pt.as_tensor_variable(ntrialseq.astype("float64"))
 
-
 ################ Independent Variables ########################################
 kl = zscore(data.D.values) # Information gain (KL-Divergence)
 kl = pt.as_tensor_variable(kl.astype("float64"))
@@ -72,7 +71,6 @@ ent = pt.as_tensor_variable(ent.astype("float64"))
 
 surp = zscore(data.I.values) # Surprise
 surp = pt.as_tensor_variable(surp.astype("float64"))
-
 
 ############################# markasgood #####################################
 # this vector specifies the original participant number of the subjects

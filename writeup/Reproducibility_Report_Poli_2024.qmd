@@ -24,15 +24,15 @@ These measures are then incorporated into a hierarchical Bayesian model fitted t
 
 [![Figure 1. The research pipeline in Poli et al. 2024 (Figure 2 in the original paper). The current project will focus on the first three boxes outlined in yellow: (1) reproducing the information-theoretic measures from the stimuli in the visual learning task, (2) simulating infant eye-tracking data during the VL task, and (3) estimating the latent parameters at the individual level.](images/poli2024researchpipeline-01.jpg)](https://doi.org/10.1111/desc.13460)
 
-For the proposed project, I have three primary aims:
+For the proposed project, I have four primary aims:
 
 **(1)** Reproduce the findings using the original data and code.
 
-**(2)** Simulate infant looking behavior in the visual learning task, e.g., looking time in each trial.
+**(2)** Simulate infant looking behavior in the visual learning task from the posterior distribution of the original data (e.g., use individual latent parameters from the original data to generate a simulated dataset of infant looking times). Note: this is a posterior predictive simulation.
 
-**(3)** Fit a hierarchical Bayesian model to estimate latent parameter(s) of interest using the simulated data, e.g., learning performance (saccadic latency x predictability) and/or curiosity (stimulus informativity x looking time).
+**(3)** Fit the original HBM to the simulated dataset to estimate the latent parameters of interest: curiosity (information gain x looking time).
 
-**(4)** Compare model fit and analyses from simulated data to the original data (Poli et al., 2024).
+**(4)** Compare model fit and analyses from simulated data to the original data (Poli et al., 2024) by indexing the number of infants from the original study and the simulated dataset who display a significant coefficient for curiosity.
 
 ***Working through the described pipeline will help me develop the analytic toolkit and computational understanding needed for my own research program.***
 
@@ -58,12 +58,12 @@ The code to generate the sequences for the visual learning task is publicly avai
 
 1.  Load the raw data for the visual learning task.
     -   Combine the two datasets, `Roris_nostd.csv` and `Roris_smiley.csv`.
-2.  Convert to model-friendly format.
+2.  Convert to model-friendly format (pytensor variables)..
 3.  Z-score the dependent variables (looking time and saccadic latency)
 4.  Z-score the independent variables (information gain, predictability, and surprise)
 5.  Handle missing values.
 
-Verify the following columns are present:
+Verify the following columns are present in the combined dataset:
 
 -   `subj`: subject ID
 -   `nseq`: sequence number
@@ -80,27 +80,18 @@ Verify the following columns are present:
 1.  [x] **Fit the hierarchical Bayesian model (HBM)**
 
     -   Specify relationships of interest (i.e., between looking behavior and latent parameters).
-    -   Fit the model using ADVI sampling for testing, MCMC for final reproduction.
-    -   Derive individual posterior distributions for:
+    -   Fit the model using ADVI sampling.
+    -   Derive individual estimates for:
         -   **Learning Performance**: β₁\^SL (correlation between saccadic latency and predictability)
         -   **Curiosity**: β₁\^LT (correlation between looking time and information gain)
 
-2.  [ ] **Model validation**
+2.  [x] **Model validation**
 
     -   Check convergence.
 
         R\^ threshold should be \< 1.004 if using MCMC. Qualitative check with ADVI.
 
     -   (If MCMC) Compare model fit between hierarchical vs. simple (group-only) model
-
-        *Necessary to confirm the model is working correctly. If we don't find that infants look longer at more informative stimuli on average (group infant), model fitting may be wrong. Group-level results should match original findings before proceeding. Must verify that the hierarchical model fits better to prove that individual differences exist.*
-
-        *Authors compared models using WAIC and LOO. Full model (includes individual differences) should have lower scores, indicating a* *better fit. Here's the code chunk where they did this:*
-
-        ``` python
-        model_waic1 = az.loo(idata, var_name="LT_like")
-        model_waic2 = az.waic(idata, var_name="LT_like")
-        ```
 
 3.  [x] **Extract individual differences**
 
@@ -122,31 +113,29 @@ Verify the following columns are present:
 
     -   Save to an output file in which there is one row per infant; columns = latent parameters.
 
-    -   Identify infants with significant individual effects (89% credible intervals excludes zero)
+    -   Identify infants with significant individual effects (89% credible intervals excludes zero).
 
-### Simulation:
+### Simulation: 
 
-\*Indicates steps that may require assistance from the instructional team.
+1.  Fit model to original data.
 
-1.  Define the individual sequence and trial structure using `sequences_t.csv`, available [here](https://osf.io/a93qr/files), which contains the target locations.
+2.  Load the posterior medians from `posterior_median_rep.csv` as the "ground truth" parameters.
 
-2.  \*Use the formulas from the supplementary materials to compute the information-theoretic variables for each sequence (or request this code from Poli and colleagues).
+3.  Use the medians and the info-theoretic measures to generate a simulated dataset.
 
-3.  \*Generate individual parameters for 106 infants (e.g., baseline looking time, processing speed, etc) .
+4.  (If needed) follow the same pre-processing steps as above with the simulated data.
 
-4.  \*Generate behavioral data for each infant (e.g., looking time, saccadic latency, etc).
+5.  Run the HBM on the simulated data using ADVI.
 
-5.  Preprocess using same steps as Reproduction.
+6.  Compare the recovered parameters to the original.
 
-6.  Test model recovery:
-
-    **Specifically, I aim to recover similar posterior distributions for at least one of the latent parameters (e.g., curiosity) and achieve a comparable model fit with the simulated data.**
+    **Specifically, I aim to recover posterior distributions for curiosity and achieve a comparable model fit with the simulated data.**
 
 ### Differences from original study
 
-The computing environments are the same. Visualizations may be carried out in R, but the model and any pre-processing steps will be in Python.
+The computing environments are the same. Visualizations may be carried out in R, but the model and any pre-processing steps will be in Python. ADVI will be used instead of MCMC.
 
-## Project Progress Check 1
+## Project Progress Check 3
 
 ### Measure of success
 
@@ -158,26 +147,30 @@ The outcome measure will be a successful reproduction of their findings based on
 
 ### Pipeline progress
 
-1.  Modernized the original modeling script:
+1.  **Modernized the original modeling script**:
     -   Updated pymc3 to pymc, theano to pytensor
     -   Removed masked arrays since PyMC handles missing values automatically
-2.  Changed sampling for testing purposes:
+2.  **Changed from true sampling to optimization for feasibility**:
     1.  Switched to ADVI
 
-        -   Original paper and findings use MCMC with 500K tuning + 10K sampling (I have not have the time or computational capacity to run this yet).
+        -   Original paper and findings use MCMC with 500K tuning + 10K sampling.
+        -   I use ADVI with 30,000 optimization iterations and 50,000 posterior draws.
+            -   This is primarily for computational feasibility.
 
-    2.  Added convergence tracking, basically records the mean and SD of ADVI's approximation at every iteration and allows it to improve its Gaussian approximation to the posterior; the tracking lets me see if it's converging.
+    2.  **Added convergence tracking**, basically records the mean and SD of ADVI's approximation at every iteration and allows it to improve its Gaussian approximation to the posterior; the tracking lets me see if it's converging and allows me to assess model fit.
 
-    3.  Commented out WAIC/LOO, for now. Trying to run these w/ ADVI's approximation + severe PyTensor C++ issues caused big issues that were beyond my understanding...
+    3.  **Commented out WAIC/LOO**.
 
-    4.  In the meantime, I just checked my ADVI convergence. The lines flattened out by iteration 10k, indicating that the model successfully reached an "optimal" approximation of the posteriors:
+        -   *ADVI produces approximate posterior samples, not exact MCMC samples. The trace from ADVI is generated from a variational approximation (i.e., a fitted normal distribution), not from the actual posterior distribution. ADVI doesn't automatically compute and store pointwise log-likelihoods needed for WAIC/LOO.*
 
-        ![](images/advi_convergence-01.png)
-3.  Fit the model w/ ADVI sampling:
+    4.  **Assessed ADVI convergence**. The lines flattened out by iteration 10k, indicating that the model successfully reached an "optimal" approximation of the posteriors:
 
--   I did this several times with data from just 3 subjects for testing purposes, and then with all subjects in the combined dataset.
+        ![Convergence plot after fitting model over full dataset.](images/advi_convergence-01.png)
+3.  **Fit the model w/ ADVI sampling**:
 
-4.  Ran a basic analysis script (advi_analysis.py) to evaluate the significance of individual subject coefficients from the model based on 89% credible intervals w/out zero.
+-   I did this several times with data from just 3 subjects for testing purposes, and then with all subjects in the combined dataset (shown above).
+
+4.  **Ran a basic analysis script** (advi_analysis.py) to evaluate the significance of individual subject coefficients from the model based on 89% credible intervals w/out zero.
 
     Preliminary Results w/ ADVI Sampling:
 
@@ -185,7 +178,7 @@ The outcome measure will be a successful reproduction of their findings based on
 
     **Curiosity (looking time x information gain)**: approximately 40 infants (27.59%) with a significant coefficient (LT1).
 
-In summary, I completed the steps in the Reproduction section of my Methods, *kind of*. There are still major issues related to the model sampling strategy that I need to resolve.
+As of 11/12/25, I have completed the steps in the Reproduction section of my Methods, and am now working on the simulation script.
 
 ## Results
 
