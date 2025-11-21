@@ -12,9 +12,7 @@ format:
 
 ## Introduction
 
-*\[No abstract is needed.\] Each reproducibility project will have a straightforward, no frills report of the study and reproducibility results. These reports will be publicly available as supplementary material for the aggregate report(s) of the project as a whole. Also, to maximize project integrity, the intro and methods will be written and critiqued in advance of your attempt to reproduce the results. Introductions can be just 1-2 paragraphs clarifying the main idea of the original study, the target finding for your reproducibility attempt, and any other essential information. It will NOT have a literature review -- that is in the original publication. You can write both the introduction and the methods in past tense.*
-
-**Clarify key analysis of interest here: Hierarchical Bayesian model to reproduce individual estimates of infant curiosity from their looking behavior**
+Key analysis of interest: [**Posterior predictive check (PPC) to validate a hierarchical Bayesian model of infant attention during a probabilistic learning task**]{.underline}. Specifically, testing whether the model can (1) generate realistic data matching observed distributions of looking time and saccadic latency, and (2) recover known parameters when fitted to simulated data, thereby confirming the model adequately captures infant learning behavior.
 
 ### Justification for choice of study
 
@@ -22,11 +20,11 @@ My current line of research focuses on individual differences in early informati
 
 These measures are then incorporated into a hierarchical Bayesian model fitted to real infants' looking behavior (look-aways, looking time, and saccadic latency) in the VL task to infer the values of latent parameters that represent specific cognitive functions: **processing speed**, **learning performance**, **curiosity**, and **sustained attention** (see Figure 1).
 
-[![Figure 1. The research pipeline in Poli et al. 2024 (Figure 2 in the original paper). The current project will focus on the first three boxes outlined in yellow: (1) reproducing the information-theoretic measures from the stimuli in the visual learning task, (2) simulating infant eye-tracking data during the VL task, and (3) estimating the latent parameters at the individual level.](images/poli2024researchpipeline-01.jpg)](https://doi.org/10.1111/desc.13460)
+[![Figure 1. The research pipeline in Poli et al. 2024 (Figure 2 in the original paper). The current project will focus on the first three boxes outlined in yellow. ](images/poli2024researchpipeline-01.jpg)](https://doi.org/10.1111/desc.13460)
 
 For the proposed project, I have four primary aims:
 
-**(1)** Reproduce the findings using the original data and code.
+**(1)** Reproduce the findings using the original data with automatic differentiation variational inference (ADVI).
 
 **(2)** Simulate infant looking behavior in the visual learning task from the posterior distribution of the original data (e.g., use individual latent parameters from the original data to generate a simulated dataset of infant looking times). Note: this is a posterior predictive simulation.
 
@@ -54,7 +52,7 @@ The code to generate the sequences for the visual learning task is publicly avai
 
 ### **Reproduction:**
 
-#### Data Preparation
+#### Data Preparation (included in `original code`)
 
 1.  Load the raw data for the visual learning task.
     -   Combine the two datasets, `Roris_nostd.csv` and `Roris_smiley.csv`.
@@ -77,10 +75,10 @@ Verify the following columns are present in the combined dataset:
 
 #### Analysis Pipeline
 
-1.  [x] **Fit the hierarchical Bayesian model (HBM)**
+1.  [x] **Fit the hierarchical Bayesian model (HBM) using variational inference**
 
     -   Specify relationships of interest (i.e., between looking behavior and latent parameters).
-    -   Fit the model using ADVI sampling.
+    -   Fit the model using ADVI.
     -   Derive individual estimates for:
         -   **Learning Performance**: β₁\^SL (correlation between saccadic latency and predictability)
         -   **Curiosity**: β₁\^LT (correlation between looking time and information gain)
@@ -113,27 +111,31 @@ Verify the following columns are present in the combined dataset:
 
     -   Save to an output file in which there is one row per infant; columns = latent parameters.
 
+    `gen_summary_rep.csv` contains posterior summary statistics for all model parameters including the individual-level parameters of interest, learning performance (SL1) and curiosity (LT1).
+
     -   Identify infants with significant individual effects (89% credible intervals excludes zero).
 
-### Simulation: 
+    -   Compare to original findings.
 
-1.  Fit model to original data.
+### Simulation and Posterior Predictive Check:
 
-2.  Load the posterior medians from `posterior_median_rep.csv` as the "ground truth" parameters.
+1.  Load posterior means from gen_summary_rep.csv as "true" generating parameters for simulation.
 
-3.  Use the medians and the info-theoretic measures to generate a simulated dataset.
+2.  Generate simulated dataset using true parameters with original predictor structure: simulate looking time and saccadic latency from Student's T distribution (nu=15), look-away events from Poisson. Preserve original missing data structure (2,253 NaN values) and filter invalid negative values.
 
-4.  (If needed) follow the same pre-processing steps as above with the simulated data.
+3.  Standardize simulated predictors (entropy, surprise, KL-divergence) using z-scoring with nan_policy="omit", matching original preprocessing.
 
-5.  Run the HBM on the simulated data using ADVI.
+4.  Re-fit hierarchical Bayesian model to simulated data using identical ADVI procedure.
 
-6.  Compare the recovered parameters to the original.
+5.  Compare the recovered parameters to true values using distributional fit via histograms, Q-Q plots, and individual-level significance patterns.
 
-    **Specifically, I aim to recover posterior distributions for curiosity and achieve a comparable model fit with the simulated data.**
+    **Specifically, I aim to validate the model recovers both population-level effects and individual differences by achieving a comparable distributional fit and parameter estimates with simulated data.**
+
+    *If the model adequately captures infant probabilistic learning mechanisms, it should generate data distributions matching observed patterns and recover known parameters from synthetic data.*
 
 ### Differences from original study
 
-The computing environments are the same. Visualizations may be carried out in R, but the model and any pre-processing steps will be in Python. ADVI will be used instead of MCMC.
+The computing environments are the same. Visualizations may be carried out in R, but the model and any pre-processing steps will be in Python. ADVI will be used instead of MCMC as outlined above.
 
 ## Project Progress Check 3
 
@@ -141,9 +143,9 @@ The computing environments are the same. Visualizations may be carried out in R,
 
 The outcome measure will be a successful reproduction of their findings based on the latent parameters from the Bayesian model. I aim to reproduce the following as indexed by 89% credible intervals different from zero (where zero indicates lack of an effect) with both the original and the simulated data:
 
--   **Learning Performance (saccadic latency x predictability)**: approximately 57 infants (40%) with a significant coefficient.
+-   **Learning Performance (saccadic latency x predictability)**: approximately 57 infants (40%) with a significant coefficient (Poli et al., 2024).
 
--   **Curiosity (looking time x information gain)**: approximately 31 infants (22%) with a significant coefficient
+-   **Curiosity (looking time x information gain)**: approximately 31 infants (22%) with a significant coefficient (Poli et al., 2024).
 
 ### Pipeline progress
 
@@ -165,20 +167,26 @@ The outcome measure will be a successful reproduction of their findings based on
 
     4.  **Assessed ADVI convergence**. The lines flattened out by iteration 10k, indicating that the model successfully reached an "optimal" approximation of the posteriors:
 
-        ![Convergence plot after fitting model over full dataset.](images/advi_convergence-01.png)
+        ![Figure 2. Convergence plot after fitting model over full dataset.](images/advi_convergence-01.png)
 3.  **Fit the model w/ ADVI sampling**:
 
--   I did this several times with data from just 3 subjects for testing purposes, and then with all subjects in the combined dataset (shown above).
+-   I did this several times with data from just 3 subjects for testing purposes, and then with all subjects in the combined dataset (shown above). Fitting using ADVI took approximately 30-40 minutes for each full run.
 
 4.  **Ran a basic analysis script** (advi_analysis.py) to evaluate the significance of individual subject coefficients from the model based on 89% credible intervals w/out zero.
 
-    Preliminary Results w/ ADVI Sampling:
+    Preliminary Results w/ ADVI:
 
     **Learning Performance (saccadic latency x predictability)**: approximately 63 infants (43.45%) with a significant coefficient (SL1).
 
     **Curiosity (looking time x information gain)**: approximately 40 infants (27.59%) with a significant coefficient (LT1).
 
-As of 11/12/25, I have completed the steps in the Reproduction section of my Methods, and am now working on the simulation script.
+5.  **Simulated a new dataset** using true parameters as the predictors and evaluate (1) distributional fit (Figures 3 and 4) and (2) individual-level subject significance patterns (just like in Step 4).
+
+    Preliminary Results w/ ADVI:
+
+    **Learning Performance**: approximately 65 infants (44.83%) with a significant coefficient (SL1).
+
+    **Curiosity**: approximately 51 infants (35.17%) with a significant coefficient (LT1).
 
 ## Results
 
@@ -187,22 +195,14 @@ As of 11/12/25, I have completed the steps in the Reproduction section of my Met
 Data preparation following the analysis plan.
 
 ```{r include=F}
-### Data Preparation
-
-#### Load Relevant Libraries and Functions
-
-#### Import data
-
-#### Data exclusion / filtering
-
-#### Prepare data for analysis - create columns etc.
+### All code can be found in the folder labeled code
 ```
 
 ### Key analysis
 
-The analyses as specified in the analysis plan.
+![Figure 3: \[Full caption coming soon!\]](images/ppc_comparison.png){fig-align="left"}
 
-*Side-by-side graph with original graph is ideal here*
+![Figure 4: \[Full caption coming soon!\]](images/ppc_qq_plots.png){fig-align="left"}
 
 ### Exploratory analyses
 
@@ -212,7 +212,15 @@ Any follow-up analyses desired (not required).
 
 ### Summary of Reproduction Attempt
 
-Open the discussion section with a paragraph summarizing the primary result from the key analysis and assess whether you successfully reproduced it, partially reproduced it, or failed to reproduce it.
+*Open the discussion section with a paragraph summarizing the primary result from the key analysis and assess whether you successfully reproduced it, partially reproduced it, or failed to reproduce it.*
+
+*Identify one insight your simulation gave you about the strengths or limitations of the original experimental design.*
+
+Across over 9K observations (i.e., all individual trials across infants), there were over 2K missing or NaN values (nearly 24.2%!). This initially presented as a limitation, but the simulation revealed that it accurately reflects lapses in infant attention or disengagement that are informative to the cognitive processes of interest. I preserved the missingness structure in the simulation and successfully recovered parameters despite it, demonstrating that the HBM framework can appropriately the inevitable discrepancies in infants' looking data.
+
+*How would this simulation help you design a follow-up experiment with a similar paradigm?*
+
+This simulation was highly informative of the hierarchical Bayesian modeling process, which I intend to use to extract individual differences with the same paradigm in a new set of infants. Validating the model with simulated data serves as both a proof of concept and feasibility for my in-person replication.
 
 ### Commentary
 

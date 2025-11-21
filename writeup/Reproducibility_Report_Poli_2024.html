@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Victoria Hennessy (vhennessy@ucsd.edu)">
-<meta name="dcterms.date" content="2025-11-12">
+<meta name="dcterms.date" content="2025-11-20">
 
 <title>Reproducibility Report for Poli et al.&nbsp;(2024, Developmental Science)</title>
 <style>
@@ -93,7 +93,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods">Methods</a>
   <ul class="collapse">
   <li><a href="#reproduction" id="toc-reproduction" class="nav-link" data-scroll-target="#reproduction"><strong>Reproduction:</strong></a></li>
-  <li><a href="#simulation" id="toc-simulation" class="nav-link" data-scroll-target="#simulation">Simulation:</a></li>
+  <li><a href="#simulation-and-posterior-predictive-check" id="toc-simulation-and-posterior-predictive-check" class="nav-link" data-scroll-target="#simulation-and-posterior-predictive-check">Simulation and Posterior Predictive Check:</a></li>
   <li><a href="#differences-from-original-study" id="toc-differences-from-original-study" class="nav-link" data-scroll-target="#differences-from-original-study">Differences from original study</a></li>
   </ul></li>
   <li><a href="#project-progress-check-3" id="toc-project-progress-check-3" class="nav-link" data-scroll-target="#project-progress-check-3">Project Progress Check 3</a>
@@ -103,7 +103,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </ul></li>
   <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
   <ul class="collapse">
-  <li><a href="#data-preparation-1" id="toc-data-preparation-1" class="nav-link" data-scroll-target="#data-preparation-1">Data preparation</a></li>
+  <li><a href="#data-preparation" id="toc-data-preparation" class="nav-link" data-scroll-target="#data-preparation">Data preparation</a></li>
   <li><a href="#key-analysis" id="toc-key-analysis" class="nav-link" data-scroll-target="#key-analysis">Key analysis</a></li>
   <li><a href="#exploratory-analyses" id="toc-exploratory-analyses" class="nav-link" data-scroll-target="#exploratory-analyses">Exploratory analyses</a></li>
   </ul></li>
@@ -136,7 +136,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 12, 2025</p>
+      <p class="date">November 20, 2025</p>
     </div>
   </div>
   
@@ -151,8 +151,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- Reproducibility reports should all use this template to standardize reporting across projects. These reports will be public supplementary materials that accompany the summary report(s) of the aggregate results. -->
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p><em>[No abstract is needed.] Each reproducibility project will have a straightforward, no frills report of the study and reproducibility results. These reports will be publicly available as supplementary material for the aggregate report(s) of the project as a whole. Also, to maximize project integrity, the intro and methods will be written and critiqued in advance of your attempt to reproduce the results. Introductions can be just 1-2 paragraphs clarifying the main idea of the original study, the target finding for your reproducibility attempt, and any other essential information. It will NOT have a literature review – that is in the original publication. You can write both the introduction and the methods in past tense.</em></p>
-<p><strong>Clarify key analysis of interest here: Hierarchical Bayesian model to reproduce individual estimates of infant curiosity from their looking behavior</strong></p>
+<p>Key analysis of interest: <u><strong>Posterior predictive check (PPC) to validate a hierarchical Bayesian model of infant attention during a probabilistic learning task</strong></u>. Specifically, testing whether the model can (1) generate realistic data matching observed distributions of looking time and saccadic latency, and (2) recover known parameters when fitted to simulated data, thereby confirming the model adequately captures infant learning behavior.</p>
 <section id="justification-for-choice-of-study" class="level3">
 <h3 class="anchored" data-anchor-id="justification-for-choice-of-study">Justification for choice of study</h3>
 <p>My current line of research focuses on individual differences in early information seeking. To study infant learning strategies, Poli and colleagues (2020; 2024) have developed an analytic pipeline that leverages an infant-friendly visual learning (VL) task from which information-theoretic measures (e.g., <strong>predictability and information gain</strong>) can be derived for each trial in sequences of visual events.</p>
@@ -160,11 +159,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><a href="https://doi.org/10.1111/desc.13460"><img src="images/poli2024researchpipeline-01.jpg" class="img-fluid figure-img"></a></p>
-<figcaption>Figure 1. The research pipeline in Poli et al.&nbsp;2024 (Figure 2 in the original paper). The current project will focus on the first three boxes outlined in yellow: (1) reproducing the information-theoretic measures from the stimuli in the visual learning task, (2) simulating infant eye-tracking data during the VL task, and (3) estimating the latent parameters at the individual level.</figcaption>
+<figcaption>Figure 1. The research pipeline in Poli et al.&nbsp;2024 (Figure 2 in the original paper). The current project will focus on the first three boxes outlined in yellow.</figcaption>
 </figure>
 </div>
 <p>For the proposed project, I have four primary aims:</p>
-<p><strong>(1)</strong> Reproduce the findings using the original data and code.</p>
+<p><strong>(1)</strong> Reproduce the findings using the original data with automatic differentiation variational inference (ADVI).</p>
 <p><strong>(2)</strong> Simulate infant looking behavior in the visual learning task from the posterior distribution of the original data (e.g., use individual latent parameters from the original data to generate a simulated dataset of infant looking times). Note: this is a posterior predictive simulation.</p>
 <p><strong>(3)</strong> Fit the original HBM to the simulated dataset to estimate the latent parameters of interest: curiosity (information gain x looking time).</p>
 <p><strong>(4)</strong> Compare model fit and analyses from simulated data to the original data (Poli et al., 2024) by indexing the number of infants from the original study and the simulated dataset who display a significant coefficient for curiosity.</p>
@@ -186,8 +185,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="methods">Methods</h2>
 <section id="reproduction" class="level3">
 <h3 class="anchored" data-anchor-id="reproduction"><strong>Reproduction:</strong></h3>
-<section id="data-preparation" class="level4">
-<h4 class="anchored" data-anchor-id="data-preparation">Data Preparation</h4>
+<section id="data-preparation-included-in-original-code" class="level4">
+<h4 class="anchored" data-anchor-id="data-preparation-included-in-original-code">Data Preparation (included in <code>original code</code>)</h4>
 <ol type="1">
 <li>Load the raw data for the visual learning task.
 <ul>
@@ -214,10 +213,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="analysis-pipeline" class="level4">
 <h4 class="anchored" data-anchor-id="analysis-pipeline">Analysis Pipeline</h4>
 <ol type="1">
-<li><p><label><input type="checkbox" checked=""><strong>Fit the hierarchical Bayesian model (HBM)</strong></label></p>
+<li><p><label><input type="checkbox" checked=""><strong>Fit the hierarchical Bayesian model (HBM) using variational inference</strong></label></p>
 <ul>
 <li>Specify relationships of interest (i.e., between looking behavior and latent parameters).</li>
-<li>Fit the model using ADVI sampling.</li>
+<li>Fit the model using ADVI.</li>
 <li>Derive individual estimates for:
 <ul>
 <li><strong>Learning Performance</strong>: β₁^SL (correlation between saccadic latency and predictability)</li>
@@ -245,27 +244,31 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>posterior[<span class="st">"beta_LA"</span>]<span class="op">=</span>np.median(trace[<span class="st">"beta_LA"</span>], axis<span class="op">=</span><span class="dv">0</span>)  <span class="co"># (not used in main analysis)</span></span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>posterior.to_csv(<span class="st">'posterior_median.csv'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
-<li><p>Save to an output file in which there is one row per infant; columns = latent parameters.</p></li>
+<li>Save to an output file in which there is one row per infant; columns = latent parameters.</li>
+</ul>
+<p><code>gen_summary_rep.csv</code> contains posterior summary statistics for all model parameters including the individual-level parameters of interest, learning performance (SL1) and curiosity (LT1).</p>
+<ul>
 <li><p>Identify infants with significant individual effects (89% credible intervals excludes zero).</p></li>
+<li><p>Compare to original findings.</p></li>
 </ul></li>
 </ol>
 </section>
 </section>
-<section id="simulation" class="level3">
-<h3 class="anchored" data-anchor-id="simulation">Simulation:</h3>
+<section id="simulation-and-posterior-predictive-check" class="level3">
+<h3 class="anchored" data-anchor-id="simulation-and-posterior-predictive-check">Simulation and Posterior Predictive Check:</h3>
 <ol type="1">
-<li><p>Fit model to original data.</p></li>
-<li><p>Load the posterior medians from <code>posterior_median_rep.csv</code> as the “ground truth” parameters.</p></li>
-<li><p>Use the medians and the info-theoretic measures to generate a simulated dataset.</p></li>
-<li><p>(If needed) follow the same pre-processing steps as above with the simulated data.</p></li>
-<li><p>Run the HBM on the simulated data using ADVI.</p></li>
-<li><p>Compare the recovered parameters to the original.</p>
-<p><strong>Specifically, I aim to recover posterior distributions for curiosity and achieve a comparable model fit with the simulated data.</strong></p></li>
+<li><p>Load posterior means from gen_summary_rep.csv as “true” generating parameters for simulation.</p></li>
+<li><p>Generate simulated dataset using true parameters with original predictor structure: simulate looking time and saccadic latency from Student’s T distribution (nu=15), look-away events from Poisson. Preserve original missing data structure (2,253 NaN values) and filter invalid negative values.</p></li>
+<li><p>Standardize simulated predictors (entropy, surprise, KL-divergence) using z-scoring with nan_policy=“omit”, matching original preprocessing.</p></li>
+<li><p>Re-fit hierarchical Bayesian model to simulated data using identical ADVI procedure.</p></li>
+<li><p>Compare the recovered parameters to true values using distributional fit via histograms, Q-Q plots, and individual-level significance patterns.</p>
+<p><strong>Specifically, I aim to validate the model recovers both population-level effects and individual differences by achieving a comparable distributional fit and parameter estimates with simulated data.</strong></p>
+<p><em>If the model adequately captures infant probabilistic learning mechanisms, it should generate data distributions matching observed patterns and recover known parameters from synthetic data.</em></p></li>
 </ol>
 </section>
 <section id="differences-from-original-study" class="level3">
 <h3 class="anchored" data-anchor-id="differences-from-original-study">Differences from original study</h3>
-<p>The computing environments are the same. Visualizations may be carried out in R, but the model and any pre-processing steps will be in Python. ADVI will be used instead of MCMC.</p>
+<p>The computing environments are the same. Visualizations may be carried out in R, but the model and any pre-processing steps will be in Python. ADVI will be used instead of MCMC as outlined above.</p>
 </section>
 </section>
 <section id="project-progress-check-3" class="level2">
@@ -274,8 +277,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="measure-of-success">Measure of success</h3>
 <p>The outcome measure will be a successful reproduction of their findings based on the latent parameters from the Bayesian model. I aim to reproduce the following as indexed by 89% credible intervals different from zero (where zero indicates lack of an effect) with both the original and the simulated data:</p>
 <ul>
-<li><p><strong>Learning Performance (saccadic latency x predictability)</strong>: approximately 57 infants (40%) with a significant coefficient.</p></li>
-<li><p><strong>Curiosity (looking time x information gain)</strong>: approximately 31 infants (22%) with a significant coefficient</p></li>
+<li><p><strong>Learning Performance (saccadic latency x predictability)</strong>: approximately 57 infants (40%) with a significant coefficient (Poli et al., 2024).</p></li>
+<li><p><strong>Curiosity (looking time x information gain)</strong>: approximately 31 infants (22%) with a significant coefficient (Poli et al., 2024).</p></li>
 </ul>
 </section>
 <section id="pipeline-progress" class="level3">
@@ -305,34 +308,47 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="images/advi_convergence-01.png" class="img-fluid figure-img"></p>
-<figcaption>Convergence plot after fitting model over full dataset.</figcaption>
+<figcaption>Figure 2. Convergence plot after fitting model over full dataset.</figcaption>
 </figure>
 </div></li>
 </ol></li>
 <li><strong>Fit the model w/ ADVI sampling</strong>:</li>
 </ol>
 <ul>
-<li>I did this several times with data from just 3 subjects for testing purposes, and then with all subjects in the combined dataset (shown above).</li>
+<li>I did this several times with data from just 3 subjects for testing purposes, and then with all subjects in the combined dataset (shown above). Fitting using ADVI took approximately 30-40 minutes for each full run.</li>
 </ul>
 <ol start="4" type="1">
 <li><p><strong>Ran a basic analysis script</strong> (advi_analysis.py) to evaluate the significance of individual subject coefficients from the model based on 89% credible intervals w/out zero.</p>
-<p>Preliminary Results w/ ADVI Sampling:</p>
+<p>Preliminary Results w/ ADVI:</p>
 <p><strong>Learning Performance (saccadic latency x predictability)</strong>: approximately 63 infants (43.45%) with a significant coefficient (SL1).</p>
 <p><strong>Curiosity (looking time x information gain)</strong>: approximately 40 infants (27.59%) with a significant coefficient (LT1).</p></li>
+<li><p><strong>Simulated a new dataset</strong> using true parameters as the predictors and evaluate (1) distributional fit (Figures 3 and 4) and (2) individual-level subject significance patterns (just like in Step 4).</p>
+<p>Preliminary Results w/ ADVI:</p>
+<p><strong>Learning Performance</strong>: approximately 65 infants (44.83%) with a significant coefficient (SL1).</p>
+<p><strong>Curiosity</strong>: approximately 51 infants (35.17%) with a significant coefficient (LT1).</p></li>
 </ol>
-<p>As of 11/12/25, I have completed the steps in the Reproduction section of my Methods, and am now working on the simulation script.</p>
 </section>
 </section>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>
-<section id="data-preparation-1" class="level3">
-<h3 class="anchored" data-anchor-id="data-preparation-1">Data preparation</h3>
+<section id="data-preparation" class="level3">
+<h3 class="anchored" data-anchor-id="data-preparation">Data preparation</h3>
 <p>Data preparation following the analysis plan.</p>
 </section>
 <section id="key-analysis" class="level3">
 <h3 class="anchored" data-anchor-id="key-analysis">Key analysis</h3>
-<p>The analyses as specified in the analysis plan.</p>
-<p><em>Side-by-side graph with original graph is ideal here</em></p>
+<div class="quarto-figure quarto-figure-left">
+<figure class="figure">
+<p><img src="images/ppc_comparison.png" class="img-fluid figure-img"></p>
+<figcaption>Figure 3: [Full caption coming soon!]</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-left">
+<figure class="figure">
+<p><img src="images/ppc_qq_plots.png" class="img-fluid figure-img"></p>
+<figcaption>Figure 4: [Full caption coming soon!]</figcaption>
+</figure>
+</div>
 </section>
 <section id="exploratory-analyses" class="level3">
 <h3 class="anchored" data-anchor-id="exploratory-analyses">Exploratory analyses</h3>
@@ -343,7 +359,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
 <section id="summary-of-reproduction-attempt" class="level3">
 <h3 class="anchored" data-anchor-id="summary-of-reproduction-attempt">Summary of Reproduction Attempt</h3>
-<p>Open the discussion section with a paragraph summarizing the primary result from the key analysis and assess whether you successfully reproduced it, partially reproduced it, or failed to reproduce it.</p>
+<p><em>Open the discussion section with a paragraph summarizing the primary result from the key analysis and assess whether you successfully reproduced it, partially reproduced it, or failed to reproduce it.</em></p>
+<p><em>Identify one insight your simulation gave you about the strengths or limitations of the original experimental design.</em></p>
+<p>Across over 9K observations (i.e., all individual trials across infants), there were over 2K missing or NaN values (nearly 24.2%!). This initially presented as a limitation, but the simulation revealed that it accurately reflects lapses in infant attention or disengagement that are informative to the cognitive processes of interest. I preserved the missingness structure in the simulation and successfully recovered parameters despite it, demonstrating that the HBM framework can appropriately the inevitable discrepancies in infants’ looking data.</p>
+<p><em>How would this simulation help you design a follow-up experiment with a similar paradigm?</em></p>
+<p>This simulation was highly informative of the hierarchical Bayesian modeling process, which I intend to use to extract individual differences with the same paradigm in a new set of infants. Validating the model with simulated data serves as both a proof of concept and feasibility for my in-person replication.</p>
 </section>
 <section id="commentary" class="level3">
 <h3 class="anchored" data-anchor-id="commentary">Commentary</h3>
