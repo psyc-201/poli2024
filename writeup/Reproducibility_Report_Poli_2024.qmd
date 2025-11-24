@@ -1,26 +1,20 @@
 ---
 title: "Reproducibility Report for Poli et al. (2024, Developmental Science)"
 author: "Victoria Hennessy (vhennessy@ucsd.edu)"
-date: "`r format(Sys.time(), '%B %d, %Y')`"
+date: today
 format:
   html:
     toc: true
-    toc_depth: 3
+    toc-depth: 3
 ---
 
-<!-- Reproducibility reports should all use this template to standardize reporting across projects. These reports will be public supplementary materials that accompany the summary report(s) of the aggregate results. -->
-
 ## Introduction
-
-Key analysis of interest: [**Posterior predictive check (PPC) to validate a hierarchical Bayesian model of infant attention during a probabilistic learning task**]{.underline}. Specifically, testing whether the model can (1) generate realistic data matching observed distributions of looking time and saccadic latency, and (2) recover known parameters when fitted to simulated data, thereby confirming the model adequately captures infant learning behavior.
-
-### Justification for choice of study
 
 My current line of research focuses on individual differences in early information seeking. To study infant learning strategies, Poli and colleagues (2020; 2024) have developed an analytic pipeline that leverages an infant-friendly visual learning (VL) task from which information-theoretic measures (e.g., **predictability and information gain**) can be derived for each trial in sequences of visual events.
 
 These measures are then incorporated into a hierarchical Bayesian model fitted to real infants' looking behavior (look-aways, looking time, and saccadic latency) in the VL task to infer the values of latent parameters that represent specific cognitive functions: **processing speed**, **learning performance**, **curiosity**, and **sustained attention** (see Figure 1).
 
-[![Figure 1. The research pipeline in Poli et al. 2024 (Figure 2 in the original paper). The current project will focus on the first three boxes outlined in yellow. ](images/poli2024researchpipeline-01.jpg)](https://doi.org/10.1111/desc.13460)
+[![Figure 1. The research pipeline in Poli et al. 2024 (Figure 2 in the original paper). The current project will focus on the first three boxes outlined in yellow.](images/poli2024researchpipeline-01.jpg)](https://doi.org/10.1111/desc.13460)
 
 For the proposed project, I have four primary aims:
 
@@ -33,6 +27,8 @@ For the proposed project, I have four primary aims:
 **(4)** Compare model fit and analyses from simulated data to the original data (Poli et al., 2024) by indexing the number of infants from the original study and the simulated dataset who display a significant coefficient for curiosity.
 
 ***Working through the described pipeline will help me develop the analytic toolkit and computational understanding needed for my own research program.***
+
+Key analysis of interest: [**Posterior predictive check (PPC) to validate a hierarchical Bayesian model of infant attention during a probabilistic learning task**]{.underline}. Specifically, testing whether the model can (1) generate realistic data matching observed distributions of looking time and saccadic latency, and (2) recover known parameters when fitted to simulated data, thereby confirming the model adequately captures infant learning behavior.
 
 ### Anticipated challenges
 
