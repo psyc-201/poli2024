@@ -63,4 +63,4 @@ for param in ["LT0", "LT1", "SL0", "SL1",
 summary_stats = pd.DataFrame(results)
 print(summary_stats.to_string(index=False))
 
-summary_stats.to_csv("advi_analysis_original_data_mcmc.csv", index=False)
+summary_stats.to_csv("advi_analysis_original_data_mcmc.csv", index=False) #replace file name depending on data

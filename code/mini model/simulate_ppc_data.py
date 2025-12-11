@@ -1,6 +1,5 @@
 """
-Posterior Predictive Check Part One! 
-This script simulates new data from fitted model parameters (og data using ADVI)
+This script simulates new data from fitted model parameters (original data using ADVI)
 
 1. Loads posterior parameter estimates from the fitted model
 2. Uses the original data structure (predictors) 
